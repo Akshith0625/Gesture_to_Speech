@@ -13,6 +13,7 @@ if not cam.isOpened():
 
 gesture_detected = False
 
+
 def speaker(text):
     def speak():
         engine = p.init()
@@ -20,8 +21,9 @@ def speaker(text):
         engine.runAndWait()
     threading.Thread(target=speak).start()
 
-def detect_gestures(lms_list):
+def detect_gestures(lms_list,frame):
     global gesture_detected
+    gesture=None
     if not gesture_detected:
         if len(lms_list) == 2:
             lms1, lms2 = lms_list
@@ -29,9 +31,11 @@ def detect_gestures(lms_list):
             if (abs(lms1[8].x - lms2[8].x) < 0.05 and abs(lms1[8].y - lms2[8].y) < 0.05 and  # Index fingers
                 abs(lms1[4].x - lms2[4].x) < 0.05 and abs(lms1[4].y - lms2[4].y) < 0.05):  # Thumbs
                 gesture_detected = True
-                speaker("love")
-                # Reset the gesture_detected flag after a short delay
-                threading.Timer(2.0, reset_gesture_detected).start()
+                gesture="heart"
+            else:
+                gesture=None
+
+
         elif len(lms_list) == 1:
             lms = lms_list[0]
             # Check if the thumb and index finger are in a wide, opposite position near the mouth (smile gesture)
@@ -41,9 +45,7 @@ def detect_gestures(lms_list):
                 lms[16].y > lms[14].y and  # Ring finger not extended
                 lms[20].y > lms[18].y):  # Pinky finger not extended
                 gesture_detected = True
-                speaker("smile please")
-                # Reset the gesture_detected flag after a short delay
-                threading.Timer(2.0, reset_gesture_detected).start()
+                gesture="smile please"
             # Check if all fingers are extended (full palm)
             elif (lms[8].y < lms[6].y and  # Index finger
                   lms[12].y < lms[10].y and  # Middle finger
@@ -51,9 +53,7 @@ def detect_gestures(lms_list):
                   lms[20].y < lms[18].y and  # Pinky finger
                   lms[4].x > lms[3].x):  # Thumb (assuming right hand)
                 gesture_detected = True
-                speaker("hello")
-                # Reset the gesture_detected flag after a short delay
-                threading.Timer(2.0, reset_gesture_detected).start()
+                gesture='hello'
             # Check if the thumb is extended upwards (thumbs up gesture)
             elif (lms[4].y < lms[3].y and  # Thumb extended upwards
                   lms[8].y > lms[6].y and  # Index finger curled
@@ -61,19 +61,23 @@ def detect_gestures(lms_list):
                   lms[16].y > lms[14].y and  # Ring finger curled
                   lms[20].y > lms[18].y):  # Pinky finger curled
                 gesture_detected = True
-                speaker("Done")
-                # Reset the gesture_detected flag after a short delay
-                threading.Timer(2.0, reset_gesture_detected).start()
-            # Check if the thumb is extended downwards (thumbs down gesture)
+                gesture="Done"
             elif (lms[4].y > lms[3].y and  # Thumb extended downwards
                   lms[8].y > lms[6].y and  # Index finger curled
                   lms[12].y > lms[10].y and  # Middle finger curled
                   lms[16].y > lms[14].y and  # Ring finger curled
                   lms[20].y > lms[18].y):  # Pinky finger curled
                 gesture_detected = True
-                speaker("not done")
-                # Reset the gesture_detected flag after a short delay
-                threading.Timer(2.0, reset_gesture_detected).start()
+                gesture="not done"
+            else:
+                gesture=None
+
+        
+        if gesture:
+            speaker(gesture)
+            cv2.putText(frame, gesture, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+            threading.Timer(2.0, reset_gesture_detected).start()    
+
 
 def reset_gesture_detected():
     global gesture_detected
@@ -85,10 +89,10 @@ while True:
         print("Error: Failed to capture frame")
         continue
 
-    img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    result = hand.process(img)
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    result = hand.process(frame)
     if result.multi_hand_landmarks:
-        detect_gestures([handlms.landmark for handlms in result.multi_hand_landmarks])
+        detect_gestures([handlms.landmark for handlms in result.multi_hand_landmarks],frame)
 
     cv2.imshow("Hand Tracking", frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
