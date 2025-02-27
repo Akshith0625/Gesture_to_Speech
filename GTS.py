@@ -2,7 +2,6 @@ import mediapipe as mp
 import cv2
 import pyttsx3 as p
 import threading
-import time
 
 hand = mp.solutions.hands.Hands()
 cam = cv2.VideoCapture(0)
@@ -13,7 +12,10 @@ if not cam.isOpened():
 
 gesture_detected = False
 
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 def speaker(text):
     def speak():
         engine = p.init()
@@ -21,10 +23,39 @@ def speaker(text):
         engine.runAndWait()
     threading.Thread(target=speak).start()
 
+<<<<<<< Updated upstream
 def detect_gestures(lms_list,frame):
+=======
+def detect_number(lms):
+    fingers = [lms[i].y < lms[i - 2].y for i in [8, 12, 16, 20]]
+    if fingers == [True, False, False, False]:
+        return '1'
+    elif fingers == [True, True, False, False]:
+        return '2'
+    elif fingers == [True, True, True, False]:
+        return '3'
+    elif fingers == [True, True, True, True]:
+        return '4'
+    elif fingers == [True, True, True, True] and lms[4].y < lms[3].y:
+        return '5'
+    elif fingers == [True, True, True, True] and lms[4].y > lms[3].y:
+        return '6'
+    elif fingers == [True, True, True, True] and lms[4].x < lms[3].x:
+        return '7'
+    elif fingers == [True, True, True, True] and lms[4].x > lms[3].x:
+        return '8'
+    elif fingers == [True, True, True, True] and lms[4].x < lms[3].x and lms[4].y < lms[3].y:
+        return '9'
+    elif fingers == [True, True, True, True] and lms[4].x > lms[3].x and lms[4].y < lms[3].y:
+        return '10'
+    return None
+
+def detect_gesture(lms_list, frame):
+>>>>>>> Stashed changes
     global gesture_detected
     gesture=None
     if not gesture_detected:
+<<<<<<< Updated upstream
         if len(lms_list) == 2:
             lms1, lms2 = lms_list
             # Check if the tips of the index fingers and thumbs are close to each other (heart gesture)
@@ -32,6 +63,25 @@ def detect_gestures(lms_list,frame):
                 abs(lms1[4].x - lms2[4].x) < 0.05 and abs(lms1[4].y - lms2[4].y) < 0.05):  # Thumbs
                 gesture_detected = True
                 gesture="heart"
+=======
+        if len(lms_list) == 1:
+            lms = lms_list[0]
+            number_gesture = detect_number(lms)
+            if number_gesture:
+                gesture = number_gesture
+            elif all(lms[i].y < lms[i - 1].y for i in (4, 8, 12, 16, 20)):
+                gesture = "hello"
+            elif lms[4].x > lms[8].x and all(lms[8].x < lms[i].x < lms[4].x for i in (12, 16, 20)):
+                gesture = 'smile please'
+            elif all(lms[4].y < lms[i].y for i in (6, 10, 14, 18)):
+                gesture = 'thumbs up'
+            elif all(lms[4].y > lms[i].y for i in (6, 10, 14, 18)):
+                gesture = 'thumbs down'
+            elif all(abs(lms[4].x - lms[i].x) < 0.05 for i in (8, 12, 16, 20)) and \
+                 all(lms[4].y > lms[i].y for i in (8, 12, 16, 20)) and \
+                 abs(lms[4].y - lms[3].y) < 0.05:  # Heart symbol condition
+                gesture = 'love'
+>>>>>>> Stashed changes
             else:
                 gesture=None
 
@@ -75,8 +125,12 @@ def detect_gestures(lms_list,frame):
         
         if gesture:
             speaker(gesture)
+<<<<<<< Updated upstream
             cv2.putText(frame, gesture, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
             threading.Timer(2.0, reset_gesture_detected).start()    
+=======
+            threading.Timer(1.0, reset_gesture_detected).start()  # Set timer duration to 1 second
+>>>>>>> Stashed changes
 
 
 def reset_gesture_detected():
